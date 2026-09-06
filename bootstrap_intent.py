@@ -25,13 +25,15 @@ BASE = "https://api.meraki.com/api/v1"
 def from_nocternal(db_path: str, network: str, site: str, sla: str) -> dict:
     """Intent bootstrapped from NOCternal's device_state — every AP the collector knows becomes in_service intent."""
     import sqlite3
+    names = [n.strip() for n in network.split(",") if n.strip()]      # "Site - wireless,Site - 60019" (see drift.py)
+    ph = ",".join("?" * len(names))
     c = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
-    rows = c.execute("SELECT serial, name, model FROM device_state WHERE product_type='wireless' AND network=? "
-                     "ORDER BY name", (network,)).fetchall()
+    rows = c.execute(f"SELECT serial, name, model FROM device_state WHERE product_type='wireless' AND network IN ({ph}) "
+                     "ORDER BY name", names).fetchall()
     if not rows:
         sys.exit(f"no wireless devices for network {network!r} in {db_path} — check the exact name in device_state")
-    ssids = [r[0] for r in c.execute("SELECT DISTINCT ssid FROM client_info WHERE network=? AND connection='Wireless' "
-                                     "AND ssid IS NOT NULL AND ssid != '' ORDER BY ssid", (network,))]
+    ssids = [r[0] for r in c.execute(f"SELECT DISTINCT ssid FROM client_info WHERE network IN ({ph}) AND connection='Wireless' "
+                                     "AND ssid IS NOT NULL AND ssid != '' ORDER BY ssid", names)]
     return {
         "_comment": f"bootstrapped from NOCternal device_state for {network!r} — edit before treating as intent",
         "site": site, "meraki_network_id": None, "nocternal_network": network, "sla_tier": sla,

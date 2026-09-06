@@ -69,6 +69,25 @@ class Report:
 
 
 # ---------------------------------------------------------------- INTENT (Infrahub)
+def load_json(path) -> dict:
+    with open(path) as fh:
+        return json.load(fh)
+
+
+def intent_from_gql(node: dict) -> dict:
+    """Same shape as fixtures/intent_*.json, built from one WirelessSite node of the site_intent query result.
+    Used by checks/wireless_drift.py, where Infrahub hands the check the query result directly."""
+    v = lambda n, k: (n.get(k) or {}).get("value")  # noqa: E731
+    return {
+        "site": v(node, "name"), "meraki_network_id": v(node, "meraki_network_id"),
+        "nocternal_network": v(node, "nocternal_network"), "sla_tier": v(node, "sla_tier"),
+        "access_points": [{k: v(e["node"], k) for k in ("name", "serial", "model", "mac", "mgmt_ip", "floor", "lifecycle", "rf_profile")}
+                          for e in node.get("access_points", {}).get("edges", [])],
+        "ssids": [{k: v(e["node"], k) for k in ("name", "number", "enabled", "hidden", "auth_mode", "vlan_id", "band")}
+                  for e in node.get("ssids", {}).get("edges", [])],
+    }
+
+
 def intent_from_infrahub(site: str, branch: str) -> dict:
     """Pull the site subtree from Infrahub with the SDK. Same shape as fixtures/intent_*.json."""
     from infrahub_sdk import InfrahubClientSync

@@ -8,6 +8,7 @@ query SiteIntent($site: String!) {
         id
         name { value }
         meraki_network_id { value }
+        nocternal_network { value }
         sla_tier { value }
         access_points {
           edges {

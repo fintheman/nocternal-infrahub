@@ -32,6 +32,11 @@ for cloud-managed wireless (Meraki first; the schema is vendor-neutral).
 | `bootstrap_intent.py` | Day-one intent from what already exists — from the Meraki API or from NOCternal's `device_state`. Edit the result; that edit *is* your intent. |
 | `queries/site_intent.gql` | The GraphQL query on its own, for the Infrahub sandbox. |
 | `fixtures/` | A synthetic 7-AP / 3-SSID site (`NASH-HQ`) as intended, as the dashboard reports it (nine planted faults), and as a future 6 GHz refresh. |
+| `bootstrap_from_ekahau.py` | An Ekahau `.esx` survey → `lifecycle: planned` APs with floor and model. The design tool feeds intent. |
+| `.infrahub.yml` | Makes this repo an Infrahub *repository*: it contributes the schema, the query, a drift **Check**, and an **Artifact** definition. |
+| `checks/wireless_drift.py` | `InfrahubCheck` around `compare()` — runs on every Proposed Change; critical drift = red X. |
+| `templates/meraki_ssids.json.j2` | Jinja2 transform: each site's SSIDs rendered as the Meraki API `PUT` calls that would enforce them. |
+| `tests/` | Offline tests for the check, the template, and the Ekahau importer. `python3 -m pytest -q tests/` |
 | `setup_mac.sh` | Docker engine on a Mac without Docker Desktop (Colima via Homebrew). |
 | `demo.sh` / `demo_branch.sh` | Infrahub up → schema → seed → drift, then the branch scenario. |
 
@@ -113,6 +118,47 @@ networks and each collector keys on the one it polls. The list is stored on the 
 
 Swap `observed_from_nocternal()` for a read of your own monitoring store — the return shape is a dozen lines and
 deliberately looks like what a Meraki poller already keeps.
+
+## Git-driven: register this repo in Infrahub
+
+Infrahub can pull checks, transforms, and schemas from a git repository and run them inside its own task
+workers. `.infrahub.yml` declares what this repo contributes. Register it (Integrations → Repositories, or
+`infrahubctl repository add nocternal-infrahub https://github.com/fintheman/nocternal-infrahub`) and:
+
+- **`wireless_drift` Check** runs for every `WirelessSite` in the `wireless_sites` group whenever a Proposed
+  Change is validated. Intent is read from the *proposed* branch; observed state comes from `NOCTERNAL_DB`,
+  or `MERAKI_API_KEY`, or the committed `fixtures/observed_<site>.json`. Critical findings fail the check.
+  *A PR against your network's intent that fails CI because reality disagrees.*
+- **`meraki-ssids` Artifact** is generated per site from `templates/meraki_ssids.json.j2`: the SSIDs as the
+  exact `PUT /networks/{id}/wireless/ssids/{n}` bodies (secrets stay `${PSK_...}` placeholders). For
+  cloud-managed wireless there is no config file to render — the API payload *is* the artifact, versioned per
+  branch and diffed per Proposed Change.
+
+Try both against a live instance without registering anything:
+
+```
+infrahubctl check wireless_drift site=NASH-HQ --branch nash-6ghz-refresh
+infrahubctl render meraki_ssids site=NASH-HQ --branch nash-6ghz-refresh
+```
+
+## Profiles: an RF standard applied, not typed
+
+`seed_site.py` creates `ProfileWirelessAccessPoint` objects from the `profiles` block of an intent file and
+assigns each AP its `profile`. `rf_profile` and `tags` then come from the profile (`Office-5G-Pref`,
+`Clinical-Dense`), a value on the AP itself still wins, and the GraphQL query returns the effective value with
+`is_from_profile` metadata. That is the per-vertical RF standard most wireless teams keep in a spreadsheet.
+
+## The design tool feeds intent: Ekahau → planned APs
+
+```
+python3 bootstrap_from_ekahau.py --esx "Nashville HQ.esx" --site NASH-HQ --merge fixtures/intent_nash_hq.json
+python3 seed_site.py fixtures/intent_nash_hq.json --branch survey-3f-expansion
+python3 drift.py --site NASH-HQ --branch survey-3f-expansion --observed fixtures/observed_nash_hq.json
+```
+
+Every AP with a simulated radio in the `.esx` becomes a `WirelessAccessPoint` with `lifecycle: planned`, its
+floor, and its model; drift reports them as `PLANNED (info)` until they are claimed. Flip one to `in_service`
+in a Proposed Change before the hardware arrives and the check goes red — which is the point.
 
 ## Schema notes
 

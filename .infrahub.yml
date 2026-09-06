@@ -1,0 +1,36 @@
+---
+# Register this repository in Infrahub (Integrations -> Repositories, or `infrahubctl repository add`)
+# and it contributes: the wireless schema, the site_intent query, a drift Check that runs on every
+# Proposed Change touching a WirelessSite, and an artifact that renders each site's SSIDs as Meraki API calls.
+
+schemas:
+  - schema/nocternal_wireless.yml
+
+queries:
+  - name: site_intent
+    file_path: queries/site_intent.gql
+
+check_definitions:
+  - name: wireless_drift
+    class_name: WirelessDriftCheck
+    file_path: checks/wireless_drift.py
+    targets: wireless_sites            # CoreStandardGroup; seed_site.py adds every site to it
+    parameters:
+      site: name__value                # $site in site_intent.gql <- WirelessSite.name
+
+jinja2_transforms:
+  - name: meraki_ssids
+    description: Each WirelessSSID of a site rendered as the Meraki Dashboard API call that would enforce it
+    query: site_intent
+    template_path: templates/meraki_ssids.json.j2
+    watch:
+      files: []
+
+artifact_definitions:
+  - name: Meraki SSID API payloads
+    artifact_name: meraki-ssids
+    parameters:
+      site: name__value
+    content_type: application/json
+    targets: wireless_sites
+    transformation: meraki_ssids

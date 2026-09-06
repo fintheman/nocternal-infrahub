@@ -1,0 +1,41 @@
+{#- Each WirelessSSID rendered as the Meraki Dashboard API call that would make reality match intent.
+    For cloud-managed wireless there is no config file to render; the API payload IS the artifact.
+    Secrets (PSK, RADIUS) are never in intent - they stay as ${...} placeholders for the executor. -#}
+{%- set site = data.WirelessSite.edges[0].node -%}
+{%- set AUTH = {"open": "open", "psk": "psk", "ipsk": "ipsk-with-radius", "dot1x": "8021x-radius"} -%}
+{%- set BAND = {"dual": "Dual band operation", "five_only": "5 GHz band only", "six_capable": "Dual band operation with Band Steering"} -%}
+{
+  "site": {{ site.name.value | tojson }},
+  "network_id": {{ site.meraki_network_id.value | tojson }},
+  "generated_from": "infrahub",
+  "requests": [
+{%- for e in site.ssids.edges %}{% set s = e.node %}
+    {
+      "method": "PUT",
+      "path": "/networks/{{ site.meraki_network_id.value }}/wireless/ssids/{{ s.number.value }}",
+      "body": {
+        "name": {{ s.name.value | tojson }},
+        "enabled": {{ s.enabled.value | tojson }},
+        "visible": {{ (not s.hidden.value) | tojson }},
+        "authMode": {{ AUTH[s.auth_mode.value] | tojson }}
+{%- if s.auth_mode.value == "psk" %},
+        "encryptionMode": "wpa",
+        "wpaEncryptionMode": "WPA2 only",
+        "psk": "${PSK_{{ s.name.value | upper | replace('-', '_') }}}"
+{%- elif s.auth_mode.value in ("dot1x", "ipsk") %},
+        "radiusServers": [{"host": "${RADIUS_HOST}", "port": 1812, "secret": "${RADIUS_SECRET}"}]
+{%- endif %}
+{%- if s.vlan_id.value %},
+        "ipAssignmentMode": "Bridge mode",
+        "useVlanTagging": true,
+        "defaultVlanId": {{ s.vlan_id.value }}
+{%- endif %},
+        "bandSelection": {{ BAND[s.band.value] | tojson }}
+{%- if s.band.value == "six_capable" %},
+        "_note": "6 GHz is enabled per radio via the RF profile bound to each AP, not on the SSID"
+{%- endif %}
+      }
+    }{{ "," if not loop.last }}
+{%- endfor %}
+  ]
+}

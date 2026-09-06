@@ -3,6 +3,25 @@
   "site": "NASH-HQ",
   "meraki_network_id": "N_000000000000000001",
   "sla_tier": "critical",
+  "profiles": [
+    {
+      "name": "Office-5G-Pref",
+      "priority": 1000,
+      "rf_profile": "Office-5G-Pref",
+      "tags": [
+        "office"
+      ]
+    },
+    {
+      "name": "Clinical-Dense",
+      "priority": 900,
+      "rf_profile": "Clinical-Dense",
+      "tags": [
+        "clinical",
+        "high-density"
+      ]
+    }
+  ],
   "access_points": [
     {
       "name": "NASH-HQ-AP-1F-01",
@@ -12,7 +31,7 @@
       "mgmt_ip": "10.20.1.11",
       "floor": "1",
       "lifecycle": "in_service",
-      "rf_profile": "Office-5G-Pref"
+      "profile": "Office-5G-Pref"
     },
     {
       "name": "NASH-HQ-AP-1F-02",
@@ -22,7 +41,7 @@
       "mgmt_ip": "10.20.1.12",
       "floor": "1",
       "lifecycle": "in_service",
-      "rf_profile": "Office-5G-Pref"
+      "profile": "Office-5G-Pref"
     },
     {
       "name": "NASH-HQ-AP-2F-03",
@@ -32,7 +51,7 @@
       "mgmt_ip": "10.20.1.13",
       "floor": "2",
       "lifecycle": "in_service",
-      "rf_profile": "Office-5G-Pref"
+      "profile": "Clinical-Dense"
     },
     {
       "name": "NASH-HQ-AP-2F-04",
@@ -42,7 +61,7 @@
       "mgmt_ip": "10.20.1.14",
       "floor": "2",
       "lifecycle": "in_service",
-      "rf_profile": "Office-5G-Pref"
+      "profile": "Clinical-Dense"
     },
     {
       "name": "NASH-HQ-AP-2F-05",
@@ -52,7 +71,7 @@
       "mgmt_ip": "10.20.1.15",
       "floor": "2",
       "lifecycle": "in_service",
-      "rf_profile": "Office-5G-Pref"
+      "profile": "Clinical-Dense"
     },
     {
       "name": "NASH-HQ-AP-3F-06",
@@ -62,7 +81,7 @@
       "mgmt_ip": "10.20.1.16",
       "floor": "3",
       "lifecycle": "in_service",
-      "rf_profile": "Office-5G-Pref"
+      "profile": "Office-5G-Pref"
     },
     {
       "name": "NASH-HQ-AP-3F-07",
@@ -72,7 +91,7 @@
       "mgmt_ip": "10.20.1.17",
       "floor": "3",
       "lifecycle": "in_service",
-      "rf_profile": "Office-5G-Pref"
+      "profile": "Office-5G-Pref"
     }
   ],
   "ssids": [

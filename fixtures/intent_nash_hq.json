@@ -3,18 +3,124 @@
   "site": "NASH-HQ",
   "meraki_network_id": "N_000000000000000001",
   "sla_tier": "critical",
+  "profiles": [
+    {
+      "name": "Office-5G-Pref",
+      "priority": 1000,
+      "rf_profile": "Office-5G-Pref",
+      "tags": [
+        "office"
+      ]
+    },
+    {
+      "name": "Clinical-Dense",
+      "priority": 900,
+      "rf_profile": "Clinical-Dense",
+      "tags": [
+        "clinical",
+        "high-density"
+      ]
+    }
+  ],
   "access_points": [
-    {"name": "NASH-HQ-AP-1F-01", "serial": "Q2XX-AAAA-0001", "model": "MR57", "mac": "e4:55:a8:10:00:01", "mgmt_ip": "10.20.1.11", "floor": "1", "lifecycle": "in_service", "rf_profile": "Office-5G-Pref"},
-    {"name": "NASH-HQ-AP-1F-02", "serial": "Q2XX-AAAA-0002", "model": "MR57", "mac": "e4:55:a8:10:00:02", "mgmt_ip": "10.20.1.12", "floor": "1", "lifecycle": "in_service", "rf_profile": "Office-5G-Pref"},
-    {"name": "NASH-HQ-AP-2F-03", "serial": "Q2XX-AAAA-0003", "model": "MR57", "mac": "e4:55:a8:10:00:03", "mgmt_ip": "10.20.1.13", "floor": "2", "lifecycle": "in_service", "rf_profile": "Office-5G-Pref"},
-    {"name": "NASH-HQ-AP-2F-04", "serial": "Q2XX-AAAA-0004", "model": "MR57", "mac": "e4:55:a8:10:00:04", "mgmt_ip": "10.20.1.14", "floor": "2", "lifecycle": "in_service", "rf_profile": "Office-5G-Pref"},
-    {"name": "NASH-HQ-AP-2F-05", "serial": "Q2XX-AAAA-0005", "model": "MR57", "mac": "e4:55:a8:10:00:05", "mgmt_ip": "10.20.1.15", "floor": "2", "lifecycle": "in_service", "rf_profile": "Office-5G-Pref"},
-    {"name": "NASH-HQ-AP-3F-06", "serial": "Q2XX-AAAA-0006", "model": "MR46", "mac": "e4:55:a8:10:00:06", "mgmt_ip": "10.20.1.16", "floor": "3", "lifecycle": "in_service", "rf_profile": "Office-5G-Pref"},
-    {"name": "NASH-HQ-AP-3F-07", "serial": "Q2XX-AAAA-0007", "model": "CW9166", "mac": null, "mgmt_ip": null, "floor": "3", "lifecycle": "planned", "rf_profile": "Office-5G-Pref"}
+    {
+      "name": "NASH-HQ-AP-1F-01",
+      "serial": "Q2XX-AAAA-0001",
+      "model": "MR57",
+      "mac": "e4:55:a8:10:00:01",
+      "mgmt_ip": "10.20.1.11",
+      "floor": "1",
+      "lifecycle": "in_service",
+      "profile": "Office-5G-Pref"
+    },
+    {
+      "name": "NASH-HQ-AP-1F-02",
+      "serial": "Q2XX-AAAA-0002",
+      "model": "MR57",
+      "mac": "e4:55:a8:10:00:02",
+      "mgmt_ip": "10.20.1.12",
+      "floor": "1",
+      "lifecycle": "in_service",
+      "profile": "Office-5G-Pref"
+    },
+    {
+      "name": "NASH-HQ-AP-2F-03",
+      "serial": "Q2XX-AAAA-0003",
+      "model": "MR57",
+      "mac": "e4:55:a8:10:00:03",
+      "mgmt_ip": "10.20.1.13",
+      "floor": "2",
+      "lifecycle": "in_service",
+      "profile": "Clinical-Dense"
+    },
+    {
+      "name": "NASH-HQ-AP-2F-04",
+      "serial": "Q2XX-AAAA-0004",
+      "model": "MR57",
+      "mac": "e4:55:a8:10:00:04",
+      "mgmt_ip": "10.20.1.14",
+      "floor": "2",
+      "lifecycle": "in_service",
+      "profile": "Clinical-Dense"
+    },
+    {
+      "name": "NASH-HQ-AP-2F-05",
+      "serial": "Q2XX-AAAA-0005",
+      "model": "MR57",
+      "mac": "e4:55:a8:10:00:05",
+      "mgmt_ip": "10.20.1.15",
+      "floor": "2",
+      "lifecycle": "in_service",
+      "profile": "Clinical-Dense"
+    },
+    {
+      "name": "NASH-HQ-AP-3F-06",
+      "serial": "Q2XX-AAAA-0006",
+      "model": "MR46",
+      "mac": "e4:55:a8:10:00:06",
+      "mgmt_ip": "10.20.1.16",
+      "floor": "3",
+      "lifecycle": "in_service",
+      "profile": "Office-5G-Pref"
+    },
+    {
+      "name": "NASH-HQ-AP-3F-07",
+      "serial": "Q2XX-AAAA-0007",
+      "model": "CW9166",
+      "mac": null,
+      "mgmt_ip": null,
+      "floor": "3",
+      "lifecycle": "planned",
+      "profile": "Office-5G-Pref"
+    }
   ],
   "ssids": [
-    {"name": "NOCternal-Corp",  "number": 0, "enabled": true, "hidden": false, "auth_mode": "dot1x", "vlan_id": 110, "band": "five_only"},
-    {"name": "NOCternal-Guest", "number": 1, "enabled": true, "hidden": false, "auth_mode": "open",  "vlan_id": 120, "band": "dual"},
-    {"name": "NOCternal-IoT",   "number": 2, "enabled": true, "hidden": true,  "auth_mode": "psk",   "vlan_id": 130, "band": "dual"}
+    {
+      "name": "NOCternal-Corp",
+      "number": 0,
+      "enabled": true,
+      "hidden": false,
+      "auth_mode": "dot1x",
+      "vlan_id": 110,
+      "band": "five_only"
+    },
+    {
+      "name": "NOCternal-Guest",
+      "number": 1,
+      "enabled": true,
+      "hidden": false,
+      "auth_mode": "open",
+      "vlan_id": 120,
+      "band": "dual"
+    },
+    {
+      "name": "NOCternal-IoT",
+      "number": 2,
+      "enabled": true,
+      "hidden": true,
+      "auth_mode": "psk",
+      "vlan_id": 130,
+      "band": "dual"
+    }
   ]
 }
