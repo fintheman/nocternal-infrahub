@@ -1,0 +1,24 @@
+{
+  "_comment": "What NOCternal's Meraki collector actually saw. Shape mirrors the Meraki Dashboard API so meraki_observed() in drift.py produces the same thing live.",
+  "site": "NASH-HQ",
+  "collected_at": "2026-09-06T14:05:00-05:00",
+  "access_points": [
+    {"name": "NASH-HQ-AP-1F-01", "serial": "Q2XX-AAAA-0001", "model": "MR57", "mac": "e4:55:a8:10:00:01", "lanIp": "10.20.1.11", "status": "online"},
+    {"name": "NASH-HQ-AP-1F-02", "serial": "Q2XX-AAAA-0002", "model": "MR57", "mac": "e4:55:a8:10:00:02", "lanIp": "10.20.1.12", "status": "online"},
+    {"name": "NASH-HQ-AP-2F-03", "serial": "Q2XX-AAAA-0003", "model": "MR57", "mac": "e4:55:a8:10:00:03", "lanIp": "10.20.1.13", "status": "offline"},
+    {"name": "nash-ap-2f-4",     "serial": "Q2XX-AAAA-0004", "model": "MR46", "mac": "e4:55:a8:10:00:04", "lanIp": "10.20.1.14", "status": "online"},
+    {"name": "NASH-HQ-AP-3F-06", "serial": "Q2XX-AAAA-0006", "model": "MR46", "mac": "e4:55:a8:10:00:06", "lanIp": "10.20.1.16", "status": "online"},
+    {"name": "MR33-spare",       "serial": "Q2XX-OLD0-0099", "model": "MR33", "mac": "e4:55:a8:10:00:99", "lanIp": "10.20.1.99", "status": "online"}
+  ],
+  "ssids": [
+    {"number": 0, "name": "NOCternal-Corp",  "enabled": true,  "hidden": false, "authMode": "8021x-radius", "defaultVlanId": 110, "bandSelection": "5 GHz band only"},
+    {"number": 1, "name": "NOCternal-Guest", "enabled": true,  "hidden": false, "authMode": "open",         "defaultVlanId": 120, "bandSelection": "Dual band operation"},
+    {"number": 2, "name": "NOCternal-IoT",   "enabled": true,  "hidden": true,  "authMode": "psk",          "defaultVlanId": 130, "bandSelection": "Dual band operation"},
+    {"number": 3, "name": "Setup-Temp",      "enabled": true,  "hidden": false, "authMode": "psk",          "defaultVlanId": 1,   "bandSelection": "Dual band operation"}
+  ],
+  "air_marshal": [
+    {"ssid": "NOCternal-Corp",  "bssids": [{"bssid": "e4:55:a8:10:00:01"}, {"bssid": "e4:55:a8:10:00:02"}], "wiredMacs": []},
+    {"ssid": "NOCternal-Corp",  "bssids": [{"bssid": "02:11:22:33:44:55"}], "wiredMacs": ["02:11:22:33:44:55"]},
+    {"ssid": "xfinitywifi",     "bssids": [{"bssid": "a0:b1:c2:d3:e4:f5"}], "wiredMacs": []}
+  ]
+}

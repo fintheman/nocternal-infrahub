@@ -1,0 +1,12 @@
+docker-compose.yml
+drift_*.json
+__pycache__/
+.env
+.venv/
+.DS_Store
+# private planning notes — never in the public repo
+NOCternal_Infrahub_Integration_Plan.md
+# intent bootstrapped from real networks stays local; only the synthetic NASH-HQ fixtures are published
+fixtures/intent_*.json
+!fixtures/intent_nash_hq.json
+!fixtures/intent_nash_hq_refresh.json

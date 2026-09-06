@@ -1,0 +1,197 @@
+---
+# NOCternal reference wireless schema for Infrahub
+# Models INTENDED state for a cloud-managed WLAN estate (Meraki-first, vendor-neutral fields).
+# Infrahub holds intent. NOCternal holds observed. drift.py is the diff.
+version: "1.0"
+
+nodes:
+  - name: Site
+    namespace: Wireless
+    label: Wireless Site
+    description: A physical location with a managed WLAN (maps 1:1 to a Meraki network).
+    icon: mdi:office-building-marker
+    human_friendly_id: ["name__value"]
+    display_label: "{{ name__value }}"
+    order_by: ["name__value"]
+    attributes:
+      - name: name
+        kind: Text
+        unique: true
+        description: Site short name, e.g. NASH-HQ
+      - name: meraki_network_id
+        kind: Text
+        optional: true
+        unique: true
+        description: Meraki dashboard network ID (N_xxxx / L_xxxx)
+      - name: nocternal_network
+        kind: Text
+        optional: true
+        description: Network name as NOCternal's collectors store it (device_state.network) — the join key to observed state
+      - name: address
+        kind: Text
+        optional: true
+      - name: timezone
+        kind: Text
+        optional: true
+        default_value: America/Chicago
+      - name: vertical
+        kind: Dropdown
+        optional: true
+        choices:
+          - name: healthcare
+            label: Healthcare
+            color: "#1F6F78"
+          - name: venue
+            label: Stadium / Venue
+            color: "#13444A"
+          - name: retail
+            label: Retail / Multi-site
+            color: "#5B8C5A"
+          - name: office
+            label: Corporate Office
+            color: "#7A7A7A"
+      - name: sla_tier
+        kind: Dropdown
+        optional: true
+        default_value: standard
+        choices:
+          - name: critical
+            label: Critical (clinical / game-day)
+            color: "#C0392B"
+          - name: standard
+            label: Standard
+            color: "#2E86C1"
+          - name: best_effort
+            label: Best effort
+            color: "#95A5A6"
+    relationships:
+      - name: access_points
+        peer: WirelessAccessPoint
+        cardinality: many
+        kind: Component
+        optional: true
+      - name: ssids
+        peer: WirelessSSID
+        cardinality: many
+        kind: Component
+        optional: true
+
+  - name: AccessPoint
+    namespace: Wireless
+    label: Access Point
+    description: An AP that is SUPPOSED to exist at a site (intent). Serial is the join key to observed state.
+    icon: mdi:access-point
+    human_friendly_id: ["serial__value"]
+    display_label: "{{ name__value }} ({{ serial__value }})"
+    order_by: ["name__value"]
+    attributes:
+      - name: name
+        kind: Text
+        description: Hostname as it should appear in the dashboard, e.g. NASH-HQ-AP-2F-07
+      - name: serial
+        kind: Text
+        unique: true
+        description: Vendor serial (Meraki Qxxx-xxxx-xxxx)
+      - name: model
+        kind: Text
+        description: e.g. MR57, MR46, CW9166
+      - name: mac
+        kind: MacAddress
+        optional: true
+        description: Base radio MAC. Used to separate our BSSIDs from rogue/evil-twin.
+      - name: mgmt_ip
+        kind: IPHost
+        optional: true
+      - name: floor
+        kind: Text
+        optional: true
+      - name: lifecycle
+        kind: Dropdown
+        default_value: in_service
+        description: What we EXPECT this AP to be doing right now.
+        choices:
+          - name: planned
+            label: Planned (on survey, not shipped)
+            color: "#95A5A6"
+          - name: staged
+            label: Staged (claimed, not installed)
+            color: "#F39C12"
+          - name: in_service
+            label: In service
+            color: "#27AE60"
+          - name: decommissioned
+            label: Decommissioned
+            color: "#7F8C8D"
+      - name: rf_profile
+        kind: Text
+        optional: true
+        description: Name of the RF profile that should be bound to this AP
+      - name: tags
+        kind: List
+        optional: true
+    relationships:
+      - name: site
+        peer: WirelessSite
+        cardinality: one
+        kind: Parent
+        optional: false
+
+  - name: SSID
+    namespace: Wireless
+    label: SSID
+    description: An SSID that is SUPPOSED to be broadcast at a site (intent). Anything else in the air is drift.
+    icon: mdi:wifi
+    human_friendly_id: ["site__name__value", "name__value"]
+    display_label: "{{ name__value }}"
+    order_by: ["name__value"]
+    uniqueness_constraints:
+      - ["site", "name__value"]
+    attributes:
+      - name: name
+        kind: Text
+        description: Broadcast SSID name (case-sensitive)
+      - name: number
+        kind: Number
+        optional: true
+        description: Meraki SSID slot 0-14
+      - name: enabled
+        kind: Boolean
+        default_value: true
+      - name: hidden
+        kind: Boolean
+        default_value: false
+      - name: auth_mode
+        kind: Dropdown
+        default_value: psk
+        choices:
+          - name: open
+            label: Open
+            color: "#C0392B"
+          - name: psk
+            label: WPA2/3-PSK
+            color: "#F39C12"
+          - name: ipsk
+            label: Identity PSK
+            color: "#2E86C1"
+          - name: dot1x
+            label: 802.1X / RADIUS
+            color: "#27AE60"
+      - name: vlan_id
+        kind: Number
+        optional: true
+      - name: band
+        kind: Dropdown
+        default_value: dual
+        choices:
+          - name: dual
+            label: 2.4 + 5 GHz
+          - name: five_only
+            label: 5 GHz only
+          - name: six_capable
+            label: 5 + 6 GHz (Wi-Fi 6E/7)
+    relationships:
+      - name: site
+        peer: WirelessSite
+        cardinality: one
+        kind: Parent
+        optional: false

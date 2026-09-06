@@ -1,0 +1,42 @@
+# Everything NOCternal needs to know about what SHOULD be true at one site.
+# Run in the Infrahub GraphQL sandbox (http://localhost:8000/graphql) or via drift.py.
+# Variables: { "site": "NASH-HQ" }
+query SiteIntent($site: String!) {
+  WirelessSite(name__value: $site) {
+    edges {
+      node {
+        id
+        name { value }
+        meraki_network_id { value }
+        sla_tier { value }
+        access_points {
+          edges {
+            node {
+              name { value }
+              serial { value }
+              model { value }
+              mac { value }
+              mgmt_ip { value }
+              floor { value }
+              lifecycle { value }
+              rf_profile { value }
+            }
+          }
+        }
+        ssids {
+          edges {
+            node {
+              name { value }
+              number { value }
+              enabled { value }
+              hidden { value }
+              auth_mode { value }
+              vlan_id { value }
+              band { value }
+            }
+          }
+        }
+      }
+    }
+  }
+}

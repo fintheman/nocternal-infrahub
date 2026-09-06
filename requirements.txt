@@ -1,0 +1,2 @@
+infrahub-sdk[ctl]>=1.23
+requests>=2.31
