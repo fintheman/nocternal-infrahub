@@ -9,19 +9,35 @@ Infrahub is a source of truth for what the network is *supposed* to be. A monito
 `Setup-Temp` SSID, every "who renamed that access point" lives. This repo is a small, working bridge across it
 for cloud-managed wireless (Meraki first; the schema is vendor-neutral).
 
-```
-        intent (should be)                                     observed (is)
-  ┌────────────────────────┐                          ┌───────────────────────────┐
-  │  Infrahub              │  GraphQL / Python SDK    │  NOCternal event store    │  SQLite
-  │  WirelessSite          │ ───────────┐  ┌───────── │   device_state            │
-  │  WirelessAccessPoint   │            │  │          │   rogue_aps (Air Marshal) │
-  │  WirelessSSID          │            ▼  ▼          │   client_info             │
-  └────────────────────────┘        ┌──────────┐      └───────────────────────────┘
-        branches / proposed changes │ drift.py │            — or — Meraki Dashboard API
-                                    └──────────┘
-                                         │  report + JSON + exit code
-                                         ▼
-                        !! crit EVIL_TWIN   NOCternal-Corp   our SSID from a BSSID we don't own (on the WIRE)
+```mermaid
+flowchart LR
+    subgraph design["Design"]
+        EK["Ekahau .esx<br/>simulated APs"]
+    end
+    subgraph intent["Intent — Infrahub"]
+        S["WirelessSite<br/>vertical · sla_tier"]
+        AP["WirelessAccessPoint<br/>serial · lifecycle · profile"]
+        SS["WirelessSSID<br/>auth · vlan · band"]
+        S --- AP
+        S --- SS
+        GEN["Generator<br/>SSIDs from vertical"] -.-> SS
+        PC["Branch → Proposed Change"]
+    end
+    subgraph observed["Observed — NOCternal"]
+        DS["device_state"]
+        RA["rogue_aps<br/>(Air Marshal)"]
+        CI["client_info"]
+        MK["Meraki Dashboard API"]
+    end
+    EK -- "bootstrap_from_ekahau.py<br/>lifecycle: planned" --> AP
+    S -- "GraphQL / SDK" --> D{{"drift.py"}}
+    DS --> D
+    RA --> D
+    CI --> D
+    MK -.-> D
+    D --> R["report · JSON · exit 1"]
+    D -- "Check on every<br/>Proposed Change" --> PC
+    SS -- "Jinja2 transform" --> ART["Artifact:<br/>Meraki PUT /wireless/ssids/{n}"]
 ```
 
 ## What's here
@@ -183,6 +199,10 @@ in a Proposed Change before the hardware arrives and the check goes red — whic
 
 ## Schema notes
 
+There is a longer write-up in [`docs/SCHEMA_PROPOSAL.md`](docs/SCHEMA_PROPOSAL.md): an RFC-style proposal for a
+vendor-neutral wireless schema in the Infrahub schema library, with the Meraki / Mist / Aruba Central / Catalyst
+mapping and the open questions.
+
 Three nodes, all in namespace `Wireless`. `WirelessAccessPoint.serial` is the join key to observed state;
 `WirelessSSID` is unique per `(site, name)`. `lifecycle` (`planned / staged / in_service / decommissioned`) is
 what turns a missing AP into either `PLANNED (info)` or `MISSING (crit)`. `sla_tier: critical` promotes a down AP
@@ -190,6 +210,37 @@ from warning to critical — a clinical floor and a break room are not the same 
 
 Vendor-specific detail (Meraki RF profile IDs, Mist site IDs, Aruba Central group names) belongs in a `JSON`
 attribute or a vendor-namespaced extension, not in these nodes.
+
+## Field notes — what I learned building this against Infrahub 1.11
+
+Things the docs don't say out loud, in the order I hit them. Kept here because they are exactly what a customer
+will hit on day one.
+
+- **Branches are snapshots of the schema too.** I added `nocternal_network` to `WirelessSite` on `main` after
+  cutting `nash-6ghz-refresh`; every query on the branch then failed with *Cannot query field*. A branch created
+  before a schema change needs `infrahubctl branch rebase <branch>`. Same for shared objects: a group created on
+  `main` after the branch exists collides on its human-friendly ID when the branch tries to create it. Plumbing
+  objects (groups) now live on `main` only in `seed_site.py`; `demo_branch.sh` rebases an existing branch.
+- **Attribute kinds normalise.** `IPHost` stores `10.20.1.11` as `10.20.1.11/32`; `MacAddress` upper-cases.
+  Anything that compares intent to a vendor API has to normalise both sides (`drift.py` strips `/32` and
+  `/128`, lower-cases MACs).
+- **`RelatedNode.id` is read-only in the SDK.** Updating a cardinality-one relationship on an existing node is
+  `setattr(node, "site", site_id)` — the node's `__setattr__` rebuilds the RelatedNode. Assigning `.id` raises.
+- **`display_labels` / `default_filter` are deprecated** in favour of `display_label: "{{ name__value }}"` and
+  `human_friendly_id`. The loader warns but accepts the old form; OpsMill's own base models use the new one.
+- **Profiles only carry optional attributes.** `rf_profile` and `tags` are good profile material; `serial` is
+  not. A value set on the node beats the profile, and the query returns the effective value with
+  `is_from_profile` metadata, so drift compares what is actually in force.
+- **Checks fail on `log_error`, nothing else.** Severity policy is yours: this check logs criticals as errors and
+  warnings as info, so a Proposed Change goes red for an evil twin but not for a renamed AP.
+- **Generators own only what they produce.** Tracking (`delete_unused_nodes=True`) retires nodes the generator
+  stops producing; hand-made SSIDs on the same site are untouched. Adopting an existing node by name instead of
+  creating a duplicate matters because `WirelessSSID` is unique per `(site, name)`.
+- **Cloud-managed wireless has no config file, and that's fine.** The artifact is the API payload. Rendering the
+  Meraki `PUT` body per SSID, with secrets left as `${...}` placeholders, gives the same diff-per-branch story a
+  router config gets.
+- **Colima is enough.** Infrahub CE (7 containers incl. Neo4j) came up healthy in ~20 s on a Mac mini with a
+  4 CPU / 8 GB Colima VM. No Docker Desktop, no admin prompt.
 
 ## Where this goes next
 
