@@ -17,8 +17,6 @@ import sys
 from infrahub_sdk import InfrahubClientSync
 from infrahub_sdk.exceptions import NodeNotFoundError
 
-GROUP = "wireless_sites"
-
 
 def upsert(client, kind, match, data, branch):
     """Get-or-create a node by a unique attribute, then set the rest of the fields."""
@@ -26,7 +24,7 @@ def upsert(client, kind, match, data, branch):
         node = client.get(kind=kind, branch=branch, **match)
         created = False
     except NodeNotFoundError:
-        node = client.create(kind=kind, branch=branch, data={**match_to_data(match), **{k: v for k, v in data.items() if v is not None}})
+        node = client.create(kind=kind, branch=branch, data={**match_to_data(match), **data})
         created = True
     if not created:
         for k, v in data.items():
@@ -61,33 +59,11 @@ def main():
     )
     print(f"{'created' if new else 'updated'} site  {intent['site']}  id={site.id}")
 
-    # Every site goes in the `wireless_sites` group: that is what .infrahub.yml targets for the drift check and the artifact.
-    group, new = upsert(client, "CoreStandardGroup", {"name__value": GROUP}, {"description": "Sites the wireless_drift check and meraki-ssids artifact run against"}, args.branch)
-    group.members.fetch()
-    if site.id not in group.members.peer_ids:
-        group.members.add(site.id)
-        group.save()
-    print(f"  {'created' if new else 'in'} group {GROUP}")
-
-    # Profiles: an RF standard applied to many APs instead of typed into each one (Infrahub generates ProfileWirelessAccessPoint from the schema).
-    profile_ids = {}
-    for p in intent.get("profiles", []):
-        data = {k: p.get(k) for k in ("rf_profile", "tags", "floor")}
-        data["profile_priority"] = p.get("priority", 1000)
-        prof, new = upsert(client, "ProfileWirelessAccessPoint", {"profile_name__value": p["name"]}, data, args.branch)
-        profile_ids[p["name"]] = prof.id
-        print(f"  {'created' if new else 'updated'} profile {p['name']}  (rf_profile={p.get('rf_profile')})")
-
     for a in intent["access_points"]:
         data = {k: a.get(k) for k in ("name", "model", "mac", "mgmt_ip", "floor", "lifecycle", "rf_profile")}
         data["site"] = site.id
-        node, new = upsert(client, "WirelessAccessPoint", {"serial__value": a["serial"]}, data, args.branch)
-        if a.get("profile"):
-            node.profiles.fetch()
-            if profile_ids[a["profile"]] not in node.profiles.peer_ids:
-                node.profiles.add(profile_ids[a["profile"]])
-                node.save()
-        print(f"  {'created' if new else 'updated'} AP    {a['name']:<22} {a['serial']}" + (f"  profile={a['profile']}" if a.get("profile") else ""))
+        _, new = upsert(client, "WirelessAccessPoint", {"serial__value": a["serial"]}, data, args.branch)
+        print(f"  {'created' if new else 'updated'} AP    {a['name']:<22} {a['serial']}")
 
     for s in intent["ssids"]:
         data = {k: s.get(k) for k in ("number", "enabled", "hidden", "auth_mode", "vlan_id", "band")}

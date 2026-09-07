@@ -75,11 +75,11 @@ def test_meraki_artifact_template():
     assert corp["path"].endswith("/wireless/ssids/0") and corp["body"]["authMode"] == "8021x-radius"
     assert corp["body"]["defaultVlanId"] == 110 and "_note" in corp["body"]
     assert "${PSK_" in json.dumps(doc)         # secrets never rendered
-    return out
+    globals()["_last_render"] = out
 
 
 if __name__ == "__main__":
     test_intent_roundtrip(); print("intent roundtrip      ok")
     test_check_fails_on_drift(); print("check fails on drift  ok")
     test_check_passes_when_clean(); print("check passes clean    ok")
-    print("artifact template     ok\n"); print(test_meraki_artifact_template())
+    test_meraki_artifact_template(); print("artifact template     ok\n"); print(_last_render)  # noqa: F821

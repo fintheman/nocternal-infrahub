@@ -9,8 +9,8 @@ BRANCH="${1:-nash-6ghz-refresh}"
 
 step() { printf '\n\033[1;36m== %s\033[0m\n' "$*"; }
 
-step "1/3  create branch $BRANCH (no-op if it exists)"
-infrahubctl branch create "$BRANCH" 2>/dev/null || echo "branch $BRANCH already exists"
+step "1/3  create branch $BRANCH (or rebase it onto main if it already exists)"
+infrahubctl branch create "$BRANCH" 2>/dev/null || infrahubctl branch rebase "$BRANCH"
 
 step "2/3  seed the FUTURE intent on the branch (NOCternal-Corp -> six_capable, CW9166 on 3F -> in_service)"
 python3 seed_site.py fixtures/intent_nash_hq_refresh.json --branch "$BRANCH"

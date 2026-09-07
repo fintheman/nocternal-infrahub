@@ -73,6 +73,13 @@ now a *typed* finding (`kind`, `severity`, `object`, `intent`, `observed`) that 
 ./demo.sh             # compose up (Infrahub 1.11 CE) → schema load → seed NASH-HQ → drift
 ```
 
+`demo.sh` exports the connection for its own run only. For anything you run by hand afterwards:
+
+```
+source .venv/bin/activate
+export INFRAHUB_ADDRESS=http://localhost:8000 INFRAHUB_API_TOKEN=06438eb2-8019-4776-878c-0941b1f1d1ec   # demo compose default
+```
+
 Then open `http://localhost:8000` (`admin` / `infrahub`). The **Wireless** section in the left menu — Sites,
 Access Points, SSIDs — was generated from the YAML. `http://localhost:8000/graphql` with
 `queries/site_intent.gql` and `{"site": "NASH-HQ"}` shows the query `drift.py` runs.
@@ -92,7 +99,9 @@ planned CW9166 goes `in_service`), and diffs today's reality against the branch:
 5 critical, 4 warning, 1 info   ->   DRIFT
 ```
 
-That is a pre-change readiness check: what will be wrong *after* we merge, before we touch anything. Open the
+That is a pre-change readiness check: what will be wrong *after* we merge, before we touch anything. (If the
+schema or shared objects on `main` move after the branch was cut, `infrahubctl branch rebase <branch>` brings the
+branch forward — `demo_branch.sh` does this automatically for an existing branch.) Open the
 branch in Infrahub, create a Proposed Change, and the diff shows exactly the two objects that moved. Merge, re-run,
 and the CW9166 goes from `PLANNED (info)` to `MISSING (crit)` — the plan became outstanding work.
 
