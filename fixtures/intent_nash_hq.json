@@ -7,19 +7,12 @@
     {
       "name": "Office-5G-Pref",
       "priority": 1000,
-      "rf_profile": "Office-5G-Pref",
-      "tags": [
-        "office"
-      ]
+      "rf_profile": "Office-5G-Pref"
     },
     {
       "name": "Clinical-Dense",
       "priority": 900,
-      "rf_profile": "Clinical-Dense",
-      "tags": [
-        "clinical",
-        "high-density"
-      ]
+      "rf_profile": "Clinical-Dense"
     }
   ],
   "access_points": [

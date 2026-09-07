@@ -259,6 +259,10 @@ will hit on day one.
   `save(allow_upsert=True)` on the existing node failed with *String! used in position expecting GenericScalar*:
   the SDK re-sent the profile-inherited `tags` list as a string. For nodes you fetched, call `update()` — it
   strips unmodified attributes. Reserve `allow_upsert` for creates.
+- **Don't put a `List` attribute in a Profile on 1.11.2.** The inherited value is returned as a string: the SDK
+  upsert failure above is one symptom, and the UI is another — opening any node that inherits the list crashes
+  with *n?.map is not a function* in `getObjectItemDisplayValue`. `fix_profile_tags.py` clears it; the fixtures
+  no longer set `tags` on profiles. Worth an issue on opsmill/infrahub with both stack traces.
 - **Profiles only carry optional attributes.** `rf_profile` and `tags` are good profile material; `serial` is
   not. A value set on the node beats the profile, and the query returns the effective value with
   `is_from_profile` metadata, so drift compares what is actually in force.
