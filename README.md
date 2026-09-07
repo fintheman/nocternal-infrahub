@@ -55,7 +55,9 @@ flowchart LR
 | `checks/wireless_drift.py` | `InfrahubCheck` around `compare()` — runs on every Proposed Change; critical drift = red X. |
 | `templates/meraki_ssids.json.j2` | Jinja2 transform: each site's SSIDs rendered as the Meraki API `PUT` calls that would enforce them. |
 | `generators/site_wireless.py` | Infrahub **Generator**: the standard SSID set for a site's `vertical` (healthcare / venue / office / retail), created from a template. `demo_generator.sh` shows it. |
-| `tests/` | Offline tests for the check, the template, and the Ekahau importer. `python3 -m pytest -q tests/` |
+| `fleet_drift.py` | The NOCternal adapter across *every* wireless network in the store — one table, one sentence. `--anonymize` for screen-sharing. |
+| `demo_all.sh` | The whole story in order with a pause between beats. Rehearse it, record it, share it. |
+| `tests/` | Offline tests for the check, the template, the generator, the Ekahau importer and the fleet roll-up. `python3 -m pytest -q tests/` |
 | `setup_mac.sh` | Docker engine on a Mac without Docker Desktop (Colima via Homebrew). |
 | `demo.sh` / `demo_branch.sh` | Infrahub up → schema → seed → drift, then the branch scenario. |
 
@@ -144,6 +146,27 @@ python3 drift.py --site SITE --nocternal ../noc-platform/events.db
 networks and each collector keys on the one it polls. The list is stored on the `WirelessSite` as
 `nocternal_network`, so after seeding you only pass `--site`.
 
+And across the whole estate the collectors know about:
+
+```
+python3 fleet_drift.py --nocternal ../noc-platform/events.db --top 5 --anonymize
+```
+```
+site                                 APs online alert  dorm  off evil rogue  nbr ssids crit warn
+------------------------------------------------------------------------------------------------
+SITE-060                             127    116     2     9    0    4     3    0     2    7   11
+SITE-018                              70     67     2     1    0    2     2    0     2    4    3
+SITE-231                              20     20     0     0    0    0     2    0     1    2    0
+SITE-083                              34     26     0     8    0    0     1    0     1    1    8
+SITE-014                              79     78     0     1    0    1     0    0     2    1    1
+------------------------------------------------------------------------------------------------
+250 sites, 9412 APs: 9008 online, 122 alerting, 280 dormant, 2 offline
+5 sites with critical drift — 3 with an evil twin on the wire (7 BSSIDs), 4 with a rogue bridged to the LAN (8 BSSIDs); 404 degraded-AP warnings fleet-wide
+```
+
+Five and a half seconds against a live store of 9,412 access points. That is the argument for putting the
+observed side of the loop next to the source of intent instead of in a dashboard nobody exports.
+
 Swap `observed_from_nocternal()` for a read of your own monitoring store — the return shape is a dozen lines and
 deliberately looks like what a Meraki poller already keeps.
 
@@ -221,6 +244,10 @@ will hit on day one.
   before a schema change needs `infrahubctl branch rebase <branch>`. Same for shared objects: a group created on
   `main` after the branch exists collides on its human-friendly ID when the branch tries to create it. Plumbing
   objects (groups) now live on `main` only in `seed_site.py`; `demo_branch.sh` rebases an existing branch.
+- **Rebase can be refused.** Rebasing that stale branch was rejected by the schema-migration validator:
+  *attribute.kind.update* on `mgmt_ip` (IPHost) for every AP on the branch, even though the kind never changed.
+  A branch whose schema has drifted from `main` is cheaper to delete and recreate than to argue with — which is
+  also the right habit: branches are short-lived. (`demo_branch.sh` takes a branch name for exactly this.)
 - **Attribute kinds normalise.** `IPHost` stores `10.20.1.11` as `10.20.1.11/32`; `MacAddress` upper-cases.
   Anything that compares intent to a vendor API has to normalise both sides (`drift.py` strips `/32` and
   `/128`, lower-cases MACs).
@@ -228,6 +255,10 @@ will hit on day one.
   `setattr(node, "site", site_id)` — the node's `__setattr__` rebuilds the RelatedNode. Assigning `.id` raises.
 - **`display_labels` / `default_filter` are deprecated** in favour of `display_label: "{{ name__value }}"` and
   `human_friendly_id`. The loader warns but accepts the old form; OpsMill's own base models use the new one.
+- **Upsert re-sends the whole node; `update()` sends the diff.** Once an AP had a profile attached,
+  `save(allow_upsert=True)` on the existing node failed with *String! used in position expecting GenericScalar*:
+  the SDK re-sent the profile-inherited `tags` list as a string. For nodes you fetched, call `update()` — it
+  strips unmodified attributes. Reserve `allow_upsert` for creates.
 - **Profiles only carry optional attributes.** `rf_profile` and `tags` are good profile material; `serial` is
   not. A value set on the node beats the profile, and the query returns the effective value with
   `is_from_profile` metadata, so drift compares what is actually in force.

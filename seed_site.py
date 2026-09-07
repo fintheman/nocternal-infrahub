@@ -56,7 +56,7 @@ def main():
     site, new = upsert(
         client, "WirelessSite", {"name__value": intent["site"]},
         {"meraki_network_id": intent.get("meraki_network_id"), "nocternal_network": intent.get("nocternal_network"),
-         "sla_tier": intent.get("sla_tier", "standard"), "vertical": intent.get("vertical")},
+         "sla_tier": intent.get("sla_tier", "standard")},
         args.branch,
     )
     print(f"{'created' if new else 'updated'} site  {intent['site']}  id={site.id}")
