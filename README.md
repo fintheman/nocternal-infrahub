@@ -1,5 +1,7 @@
 # nocternal-infrahub
 
+[![ci](https://github.com/fintheman/nocternal-infrahub/actions/workflows/ci.yml/badge.svg)](https://github.com/fintheman/nocternal-infrahub/actions/workflows/ci.yml)
+
 **Intended wireless state in [Infrahub](https://github.com/opsmill/infrahub). Observed wireless state from a NOC's collectors. The diff is the drift report.**
 
 Infrahub is a source of truth for what the network is *supposed* to be. A monitoring platform knows what it
@@ -36,6 +38,7 @@ for cloud-managed wireless (Meraki first; the schema is vendor-neutral).
 | `.infrahub.yml` | Makes this repo an Infrahub *repository*: it contributes the schema, the query, a drift **Check**, and an **Artifact** definition. |
 | `checks/wireless_drift.py` | `InfrahubCheck` around `compare()` — runs on every Proposed Change; critical drift = red X. |
 | `templates/meraki_ssids.json.j2` | Jinja2 transform: each site's SSIDs rendered as the Meraki API `PUT` calls that would enforce them. |
+| `generators/site_wireless.py` | Infrahub **Generator**: the standard SSID set for a site's `vertical` (healthcare / venue / office / retail), created from a template. `demo_generator.sh` shows it. |
 | `tests/` | Offline tests for the check, the template, and the Ekahau importer. `python3 -m pytest -q tests/` |
 | `setup_mac.sh` | Docker engine on a Mac without Docker Desktop (Colima via Homebrew). |
 | `demo.sh` / `demo_branch.sh` | Infrahub up → schema → seed → drift, then the branch scenario. |
@@ -143,12 +146,21 @@ workers. `.infrahub.yml` declares what this repo contributes. Register it (Integ
   cloud-managed wireless there is no config file to render — the API payload *is* the artifact, versioned per
   branch and diffed per Proposed Change.
 
-Try both against a live instance without registering anything:
+- **`site_wireless_standard` Generator** turns a site's `vertical` into its standard SSIDs. A hospital gets
+  Clinical (`dot1x`), Guest (`open`), Biomed (`ipsk`, hidden); a venue gets Ops, POS, Fan-WiFi; and so on.
+  It runs in the Proposed Change and again after merge, and Infrahub's generator tracking retires SSIDs the
+  template stops producing (change the vertical and watch them go). Hand-made SSIDs are never touched.
+
+Try all three against a live instance without registering anything:
 
 ```
 infrahubctl check wireless_drift site=NASH-HQ --branch nash-6ghz-refresh
 infrahubctl render meraki_ssids site=NASH-HQ --branch nash-6ghz-refresh
+./demo_generator.sh          # new NASH-CLINIC site on a branch, vertical=healthcare -> three SSIDs appear
 ```
+
+CI runs the offline tests, `infrahubctl validate schema`, and parses `.infrahub.yml` with the SDK's own model on
+every push.
 
 ## Profiles: an RF standard applied, not typed
 

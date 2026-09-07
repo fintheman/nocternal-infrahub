@@ -10,3 +10,4 @@ NOCternal_Infrahub_Integration_Plan.md
 fixtures/intent_*.json
 !fixtures/intent_nash_hq.json
 !fixtures/intent_nash_hq_refresh.json
+!fixtures/intent_nash_clinic.json

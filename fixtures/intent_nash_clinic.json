@@ -1,0 +1,13 @@
+{
+  "_comment": "A brand-new healthcare site with no SSIDs yet. Seed it on a branch, run the site_wireless_standard generator, and the clinical / guest / biomed SSIDs appear in the branch diff.",
+  "site": "NASH-CLINIC",
+  "meraki_network_id": "N_000000000000000002",
+  "sla_tier": "critical",
+  "vertical": "healthcare",
+  "profiles": [],
+  "access_points": [
+    {"name": "NASH-CLINIC-AP-01", "serial": "Q2XX-CCCC-0001", "model": "CW9166I", "mac": "e4:55:a8:20:00:01", "mgmt_ip": "10.30.1.11", "floor": "1", "lifecycle": "staged"},
+    {"name": "NASH-CLINIC-AP-02", "serial": "Q2XX-CCCC-0002", "model": "CW9166I", "mac": "e4:55:a8:20:00:02", "mgmt_ip": "10.30.1.12", "floor": "1", "lifecycle": "staged"}
+  ],
+  "ssids": []
+}

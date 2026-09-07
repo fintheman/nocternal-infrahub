@@ -18,6 +18,17 @@ check_definitions:
     parameters:
       site: name__value                # $site in site_intent.gql <- WirelessSite.name
 
+generator_definitions:
+  - name: site_wireless_standard
+    class_name: SiteWirelessGenerator
+    file_path: generators/site_wireless.py
+    query: site_intent
+    targets: wireless_sites
+    parameters:
+      site: name__value
+    watch:
+      files: []
+
 jinja2_transforms:
   - name: meraki_ssids
     description: Each WirelessSSID of a site rendered as the Meraki Dashboard API call that would enforce it

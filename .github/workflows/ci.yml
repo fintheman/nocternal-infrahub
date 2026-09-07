@@ -1,0 +1,33 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest pyyaml
+      - name: schema is valid
+        run: infrahubctl validate schema schema/nocternal_wireless.yml
+      - name: repository config parses
+        run: |
+          python - <<'EOF'
+          import yaml
+          from infrahub_sdk.schema.repository import InfrahubRepositoryConfig
+          InfrahubRepositoryConfig(**yaml.safe_load(open(".infrahub.yml")))
+          print(".infrahub.yml ok")
+          EOF
+      - name: offline drift report (fixtures)
+        run: python drift.py --site NASH-HQ --intent fixtures/intent_nash_hq.json --observed fixtures/observed_nash_hq.json || test $? -eq 1
+      - name: tests
+        run: python -m pytest -q tests/

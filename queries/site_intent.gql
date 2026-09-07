@@ -10,6 +10,7 @@ query SiteIntent($site: String!) {
         meraki_network_id { value }
         nocternal_network { value }
         sla_tier { value }
+        vertical { value }
         access_points {
           edges {
             node {
@@ -27,6 +28,7 @@ query SiteIntent($site: String!) {
         ssids {
           edges {
             node {
+              id
               name { value }
               number { value }
               enabled { value }
